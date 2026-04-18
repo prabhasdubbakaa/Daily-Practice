@@ -1,0 +1,52 @@
+#include <stdio.h>
+
+int main() {
+    int id, units;
+    char name[50];
+    float rate, amount, surcharge = 0.0, total;
+
+    // Input
+    scanf("%d", &id);
+    scanf(" %[^\n]", name);
+    scanf("%d", &units);
+
+    // Determine rate
+    if (units < 200)
+        rate = 1.20;
+    else if (units < 400)
+        rate = 1.50;
+    else if (units < 600)
+        rate = 1.80;
+    else
+        rate = 2.00;
+
+    // Calculate amount
+    amount = units * rate;
+
+    // Minimum bill condition
+    if (amount < 100) {
+        amount = 100;
+    }
+
+    // Surcharge condition (15% if amount > 400)
+    if (amount > 400) {
+        surcharge = amount * 0.15;
+    }
+
+    total = amount + surcharge;
+
+    // Output
+    printf("Customer ID : %d\n", id);
+    printf("Customer Name : %s\n", name);
+    printf("Units Consumed : %d\n", units);
+    printf("Amount Charges @ Rs. %.2f per unit : %.2f\n", rate, units * rate);
+
+    if ((units * rate) < 100) {
+        printf("Minimum Bill Applied : 100.00\n");
+    }
+
+    printf("Surcharge Amount : %.2f\n", surcharge);
+    printf("Net Amount Paid by the Customer : %.2f\n", total);
+
+    return 0;
+}
