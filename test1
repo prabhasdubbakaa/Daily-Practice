@@ -1,0 +1,145 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define TABLE_SIZE 101
+#define MAX_NODES 100
+
+// --- Hash Table Structures ---
+
+typedef struct HashEntry {
+    char *name;
+    int id;
+    struct HashEntry *next;
+} HashEntry;
+
+typedef struct {
+    HashEntry *buckets[TABLE_SIZE];
+} HashTable;
+
+// --- Graph Structures ---
+
+typedef struct AdjNode {
+    int dest;
+    struct AdjNode *next;
+} AdjNode;
+
+typedef struct {
+    AdjNode *head;
+    char *name;
+} AdjList;
+
+typedef struct {
+    int numNodes;
+    AdjList nodes[MAX_NODES];
+} Graph;
+
+// --- Hash Table Functions ---
+
+unsigned int hash(const char *name) {
+    unsigned int h = 0;
+    while (*name) {
+        h = h * 31 + *name++;
+    }
+    return h % TABLE_SIZE;
+}
+
+HashTable* createHashTable() {
+    HashTable *ht = (HashTable*)malloc(sizeof(HashTable));
+    for (int i = 0; i < TABLE_SIZE; i++) ht->buckets[i] = NULL;
+    return ht;
+}
+
+void insertHash(HashTable *ht, const char *name, int id) {
+    unsigned int index = hash(name);
+    HashEntry *entry = (HashEntry*)malloc(sizeof(HashEntry));
+    entry->name = strdup(name);
+    entry->id = id;
+    entry->next = ht->buckets[index];
+    ht->buckets[index] = entry;
+}
+
+int findId(HashTable *ht, const char *name) {
+    unsigned int index = hash(name);
+    HashEntry *entry = ht->buckets[index];
+    while (entry) {
+        if (strcmp(entry->name, name) == 0) return entry->id;
+        entry = entry->next;
+    }
+    return -1;
+}
+
+// --- Graph Functions ---
+
+Graph* createGraph() {
+    Graph *g = (Graph*)malloc(sizeof(Graph));
+    g->numNodes = 0;
+    for (int i = 0; i < MAX_NODES; i++) {
+        g->nodes[i].head = NULL;
+        g->nodes[i].name = NULL;
+    }
+    return g;
+}
+
+int getOrCreateNode(Graph *g, HashTable *ht, const char *name) {
+    int id = findId(ht, name);
+    if (id == -1) {
+        if (g->numNodes >= MAX_NODES) return -1;
+        id = g->numNodes++;
+        insertHash(ht, name, id);
+        g->nodes[id].name = strdup(name);
+    }
+    return id;
+}
+
+void addEdge(Graph *g, HashTable *ht, const char *srcName, const char *destName) {
+    int src = getOrCreateNode(g, ht, srcName);
+    int dest = getOrCreateNode(g, ht, destName);
+
+    if (src == -1 || dest == -1) return;
+
+    // Add edge src -> dest
+    AdjNode *newNode = (AdjNode*)malloc(sizeof(AdjNode));
+    newNode->dest = dest;
+    newNode->next = g->nodes[src].head;
+    g->nodes[src].head = newNode;
+}
+
+void printGraph(Graph *g) {
+    printf("\n--- Social Network Graph (Name -> Connections) ---\n");
+    for (int i = 0; i < g->numNodes; i++) {
+        printf("%s: ", g->nodes[i].name);
+        AdjNode *temp = g->nodes[i].head;
+        while (temp) {
+            printf("%s ", g->nodes[temp->dest].name);
+            temp = temp->next;
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    HashTable *ht = createHashTable();
+    Graph *g = createGraph();
+
+    printf("Adding relationships...\n");
+    addEdge(g, ht, "Alice", "Bob");
+    addEdge(g, ht, "Alice", "Charlie");
+    addEdge(g, ht, "Bob", "David");
+    addEdge(g, ht, "Charlie", "Alice");
+    addEdge(g, ht, "David", "Alice");
+    addEdge(g, ht, "Eve", "Bob");
+
+    printGraph(g);
+
+    // Demonstration of search using hash table
+    const char *searchName = "Charlie";
+    int id = findId(ht, searchName);
+    if (id != -1) {
+        printf("\nFound %s with internal ID %d\n", searchName, id);
+    } else {
+        printf("\n%s not found.\n", searchName);
+    }
+
+    return 0;
+}
