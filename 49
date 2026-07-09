@@ -1,0 +1,208 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <windows.h>
+#include <time.h>
+
+/* 
+ * PROJECT: C-SNAKE PRO
+ * DESCRIPTION: A full-featured terminal-based Snake game.
+ * FEATURES: Scoring, Colors, Smooth Controls, and Win/Loss logic.
+ */
+
+// Game Configuration
+#define WIDTH 40
+#define HEIGHT 20
+#define INITIAL_LENGTH 5
+
+// Directional Constants
+#define UP 72
+#define DOWN 80
+#define LEFT 75
+#define RIGHT 77
+
+// Global Variables
+int gameOver;
+int score;
+int snakeX[100], snakeY[100];
+int nTail;
+int fruitX, fruitY;
+int dir; // 0: Stop, 1: Left, 2: Right, 3: Up, 4: Down
+
+// Function Prototypes
+void Setup();
+void Draw();
+void Input();
+void Logic();
+void SetColor(int ForgC);
+void HideCursor();
+
+int main() {
+    srand(time(0));
+    char playAgain;
+
+    do {
+        Setup();
+        while (!gameOver) {
+            Draw();
+            Input();
+            Logic();
+            Sleep(50); // Control speed
+        }
+
+        SetColor(12); // Red for Game Over
+        printf("\n\n\t\tGAME OVER!");
+        printf("\n\t\tFinal Score: %d", score);
+        SetColor(7); // Reset to White
+        
+        printf("\n\n\t\tPlay again? (y/n): ");
+        scanf(" %c", &playAgain);
+    } while (playAgain == 'y' || playAgain == 'Y');
+
+    return 0;
+}
+
+void Setup() {
+    gameOver = 0;
+    dir = 0; // Snake starts stationary
+    nTail = INITIAL_LENGTH;
+    score = 0;
+
+    // Start snake in middle
+    int startX = WIDTH / 2;
+    int startY = HEIGHT / 2;
+
+    for (int i = 0; i < nTail; i++) {
+        snakeX[i] = startX - i;
+        snakeY[i] = startY;
+    }
+
+    // Initial fruit position
+    fruitX = rand() % (WIDTH - 2) + 1;
+    fruitY = rand() % (HEIGHT - 2) + 1;
+
+    HideCursor();
+}
+
+void Draw() {
+    // Reset cursor position to (0,0) instead of clearing screen to avoid flickering
+    COORD coord = {0, 0};
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+
+    SetColor(11); // Cyan border
+    printf("\n\t\t--- C-SNAKE PRO ---\n\t\t");
+    for (int i = 0; i < WIDTH + 2; i++) printf("#");
+    printf("\n");
+
+    for (int i = 0; i < HEIGHT; i++) {
+        printf("\t\t#");
+        for (int j = 0; j < WIDTH; j++) {
+            if (i == snakeY[0] && j == snakeX[0]) {
+                SetColor(10); // Green Head
+                printf("O");
+                SetColor(11); // Back to Cyan
+            } else if (i == fruitY && j == fruitX) {
+                SetColor(12); // Red Fruit
+                printf("*");
+                SetColor(11); // Back to Cyan
+            } else {
+                int isPrint = 0;
+                for (int k = 1; k < nTail; k++) {
+                    if (snakeX[k] == j && snakeY[k] == i) {
+                        SetColor(2); // Dark Green Body
+                        printf("o");
+                        SetColor(11);
+                        isPrint = 1;
+                    }
+                }
+                if (!isPrint) printf(" ");
+            }
+        }
+        printf("#\n");
+    }
+
+    printf("\t\t");
+    for (int i = 0; i < WIDTH + 2; i++) printf("#");
+    printf("\n\n\t\tScore: %d", score);
+    printf("\n\t\tControls: Arrow Keys | Press 'X' to Exit\n");
+}
+
+void Input() {
+    if (_kbhit()) {
+        int key = _getch();
+        if (key == 0 || key == 224) { // Handle arrow keys
+            switch (_getch()) {
+                case UP:    if (dir != 4) dir = 3; break;
+                case DOWN:  if (dir != 3) dir = 4; break;
+                case LEFT:  if (dir != 2) dir = 1; break;
+                case RIGHT: if (dir != 1) dir = 2; break;
+            }
+        } else if (key == 'x' || key == 'X') {
+            gameOver = 1;
+        }
+    }
+}
+
+void Logic() {
+    if (dir == 0) return; // Wait for first move
+
+    int prevX = snakeX[0];
+    int prevY = snakeY[0];
+    int prev2X, prev2Y;
+    
+    // Update head
+    switch (dir) {
+        case 1: snakeX[0]--; break;
+        case 2: snakeX[0]++; break;
+        case 3: snakeY[0]--; break;
+        case 4: snakeY[0]++; break;
+    }
+
+    // Update tail
+    for (int i = 1; i < nTail; i++) {
+        prev2X = snakeX[i];
+        prev2Y = snakeY[i];
+        snakeX[i] = prevX;
+        snakeY[i] = prevY;
+        prevX = prev2X;
+        prevY = prev2Y;
+    }
+
+    // Wall Collision
+    if (snakeX[0] >= WIDTH || snakeX[0] < 0 || snakeY[0] >= HEIGHT || snakeY[0] < 0) {
+        gameOver = 1;
+    }
+
+    // Self Collision
+    for (int i = 1; i < nTail; i++) {
+        if (snakeX[i] == snakeX[0] && snakeY[i] == snakeY[0]) {
+            gameOver = 1;
+        }
+    }
+
+    // Fruit Collision
+    if (snakeX[0] == fruitX && snakeY[0] == fruitY) {
+        score += 10;
+        fruitX = rand() % (WIDTH - 2) + 1;
+        fruitY = rand() % (HEIGHT - 2) + 1;
+        nTail++;
+    }
+}
+
+void SetColor(int ForgC) {
+    WORD wColor;
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (GetConsoleScreenBufferInfo(hStdOut, &csbi)) {
+        wColor = (csbi.wAttributes & 0xF0) + (ForgC & 0x0F);
+        SetConsoleTextAttribute(hStdOut, wColor);
+    }
+}
+
+void HideCursor() {
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = FALSE;
+    SetConsoleCursorInfo(consoleHandle, &info);
+}
