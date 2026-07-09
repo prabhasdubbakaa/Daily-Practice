@@ -1,0 +1,67 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Function to merge two arrays
+int* mergeArrays(int arr1[], int size1, int arr2[], int size2, int* mergedSize)
+{
+    *mergedSize = size1 + size2;
+    
+    // Allocate memory for merged array
+    int* merged = (int*)malloc(*mergedSize * sizeof(int));
+    
+    if (merged == NULL) {
+        printf("Memory allocation failed!\n");
+        return NULL;
+    }
+    
+    // Copy elements from first array
+    for (int i = 0; i < size1; i++) {
+        merged[i] = arr1[i];
+    }
+    
+    // Copy elements from second array
+    for (int i = 0; i < size2; i++) {
+        merged[size1 + i] = arr2[i];
+    }
+    
+    return merged;
+}
+
+// Function to print array
+void printArray(int arr[], int size)
+{
+    printf("Array: ");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+int main(void)
+{
+    // Example usage
+    int arr1[] = {1, 2, 3, 4, 5};
+    int size1 = 5;
+    
+    int arr2[] = {6, 7, 8, 9, 10};
+    int size2 = 5;
+    
+    int mergedSize;
+    int* merged = mergeArrays(arr1, size1, arr2, size2, &mergedSize);
+    
+    if (merged != NULL) {
+        printf("First array:\n");
+        printArray(arr1, size1);
+        
+        printf("\nSecond array:\n");
+        printArray(arr2, size2);
+        
+        printf("\nMerged array:\n");
+        printArray(merged, mergedSize);
+        
+        // Free allocated memory
+        free(merged);
+    }
+    
+    return 0;
+}
