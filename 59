@@ -1,0 +1,30 @@
+class Solution {
+public:
+    bool containsNearbyAlmostDuplicate(vector<int>& nums, int indexDiff, int valueDiff) {
+        if (valueDiff < 0) return false;
+
+        unordered_map<long long, long long> buckets;
+        long long w = (long long)valueDiff + 1;
+
+        for (int i = 0; i < nums.size(); i++) {
+            long long x = nums[i];
+            long long id = x / w;
+            if (x < 0) id--;
+
+            if (buckets.count(id)) return true;
+            if (buckets.count(id - 1) && abs(x - buckets[id - 1]) <= valueDiff) return true;
+            if (buckets.count(id + 1) && abs(x - buckets[id + 1]) <= valueDiff) return true;
+
+            buckets[id] = x;
+
+            if (i >= indexDiff) {
+                long long y = nums[i - indexDiff];
+                long long oldId = y / w;
+                if (y < 0) oldId--;
+                buckets.erase(oldId);
+            }
+        }
+
+        return false;
+    }
+};
