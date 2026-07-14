@@ -1,0 +1,29 @@
+class Solution {
+public:
+    static constexpr int MOD = 1000000007;
+
+    int subsequencePairCount(vector<int>& nums) {
+        int mx = *max_element(nums.begin(), nums.end());
+        vector<vector<int>> dp(mx + 1, vector<int>(mx + 1));
+        dp[0][0] = 1;
+
+        for (int num : nums) {
+            vector<vector<int>> ndp(mx + 1, vector<int>(mx + 1));
+            for (int x = 0; x <= mx; x++) {
+                for (int y = 0; y <= mx; y++) {
+                    if (!dp[x][y]) continue;
+                    ndp[x][y] = (ndp[x][y] + dp[x][y]) % MOD;
+                    ndp[gcd(x, num)][y] = (ndp[gcd(x, num)][y] + dp[x][y]) % MOD;
+                    ndp[x][gcd(y, num)] = (ndp[x][gcd(y, num)] + dp[x][y]) % MOD;
+                }
+            }
+            dp.swap(ndp);
+        }
+
+        int ans = 0;
+        for (int g = 1; g <= mx; g++)
+            ans = (ans + dp[g][g]) % MOD;
+
+        return ans;
+    }
+};
